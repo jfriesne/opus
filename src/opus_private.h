@@ -46,12 +46,29 @@ struct OpusRepacketizer {
    opus_int32 padding_len[48];
 };
 
+typedef struct OpusExtensionIterator {
+   const unsigned char *data;
+   const unsigned char *curr_data;
+   opus_int32 len;
+   opus_int32 curr_len;
+   int curr_frame;
+} OpusExtensionIterator;
+
 typedef struct {
    int id;
    int frame;
    const unsigned char *data;
    opus_int32 len;
 } opus_extension_data;
+
+void opus_extension_iterator_init(OpusExtensionIterator *iter,
+ const unsigned char *data, opus_int32 len);
+
+void opus_extension_iterator_reset(OpusExtensionIterator *iter);
+int opus_extension_iterator_next(OpusExtensionIterator *iter,
+ opus_extension_data *ext);
+int opus_extension_iterator_find(OpusExtensionIterator *iter,
+ opus_extension_data *ext, int id);
 
 typedef struct ChannelLayout {
    int nb_channels;
@@ -171,9 +188,6 @@ static OPUS_INLINE int align(int i)
     return ((i + alignment - 1) / alignment) * alignment;
 }
 
-/* More than that is ridiculous for now (3 * max frames per packet)*/
-opus_int32 skip_extension(const unsigned char **data, opus_int32 len, opus_int32 *header_size);
-
 int opus_packet_parse_impl(const unsigned char *data, opus_int32 len,
       int self_delimited, unsigned char *out_toc,
       const unsigned char *frames[48], opus_int16 size[48],
@@ -214,7 +228,7 @@ int opus_multistream_decode_native(
 
 opus_int32 opus_packet_extensions_parse(const unsigned char *data, opus_int32 len, opus_extension_data *extensions, opus_int32 *nb_extensions);
 
-opus_int32 opus_packet_extensions_generate(unsigned char *data, opus_int32 len, const opus_extension_data  *extensions, int nb_extensions, int pad);
+opus_int32 opus_packet_extensions_generate(unsigned char *data, opus_int32 len, const opus_extension_data  *extensions, opus_int32 nb_extensions, int pad);
 
 opus_int32 opus_packet_extensions_count(const unsigned char *data, opus_int32 len);
 
